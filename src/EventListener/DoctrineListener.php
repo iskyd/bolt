@@ -77,12 +77,14 @@ class DoctrineListener implements EventSubscriber
             $collation = $this->config->get('general/database/collate');
             $db->executeQuery(sprintf('SET NAMES %s COLLATE %s', $charset, $collation));
 
-            // Increase group_concat_max_len to 100000. By default, MySQL
+            // Increase group_concat_max_len to 100000 if you don't specify group_concat_max_len in config. By default, MySQL
             // sets this to a low value – 1024 – which causes issues with
             // certain Bolt content types – particularly repeaters – where
             // the outcome of a GROUP_CONCAT() query will be more than 1024 bytes.
             // See also: http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_group_concat_max_len
-            $db->executeQuery('SET SESSION group_concat_max_len = 100000');
+            $groupConcatMaxLen = $this->config->get('general/database/group_concat_max_len');
+
+            $db->executeQuery('SET SESSION group_concat_max_len = ' . ($groupConcatMaxLen ?: 100000));
         } elseif ($platformName === 'postgresql') {
             /** @see https://github.com/doctrine/dbal/pull/828 */
             $db->executeQuery("SET NAMES 'utf8'");
